@@ -1,0 +1,5 @@
+language: python
+install: pip install -U pylint flake8
+script:
+- pylint src
+- flake8
