@@ -39,7 +39,7 @@ class MQTTClient(mqtt.MQTTClient):
         """
         print('Connected with result code %d' % result_code)
         for pin in client.pins.values():
-            print(b'setting up MQTT for pin %s' % pin.number)
+            print('setting up MQTT for pin %d' % pin.number)
             client.publish(client.get_state_topic(pin),
                            client.get_state_payload(pin.state), True, 1)
             client.publish(client.get_config_topic(pin),
@@ -51,15 +51,12 @@ class MQTTClient(mqtt.MQTTClient):
         """Callback function which is called when a message arrives on
         subscribed topics.
         """
-        print(b'Topic: "%s", Message: "%s"' % (topic, msg))
+        print('Topic: "%s", Message: "%s"' % (topic, msg))
         parts = topic.split(b'/')
-        print(parts)
-        print(client.get_prefix())
-        print(client.get_command_topic_tail())
         if parts[0] == b'%s' % client.get_prefix() \
                 and parts[-1] == b'%s' % client.get_command_topic_tail():
             number = int(parts[-2])
-            print(b'  Setting Pin %d to %s' % (number, msg))
+            print(' Setting Pin %d to %s' % (number, msg))
             pin = client.pins[number]
             pin.set_state(msg == client.get_state_payload(True))
             # Don't use QOS 1 to prevent looping!

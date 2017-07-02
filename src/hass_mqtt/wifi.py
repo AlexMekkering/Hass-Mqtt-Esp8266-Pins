@@ -1,8 +1,8 @@
 """Module for configurable Wifi (station) interfaces"""
 
-from network import WLAN, STA_IF  # pylint: disable=import-error
-from utime import sleep_ms, ticks_ms, ticks_diff  # pylint: disable=import-error
-from machine import reset  # pylint: disable=import-error
+from network import WLAN, STA_IF  # pylint: disable=F0401
+from utime import sleep_ms, ticks_ms, ticks_diff  # pylint: disable=F0401
+from machine import reset  # pylint: disable=F0401
 from .config import Config
 
 _CONFIG_FILENAME = 'wifi.json'
@@ -25,7 +25,7 @@ def setup(ssid, password):
     was_active = NIC.active()
     NIC.active(True)
     NIC.connect(ssid, password)
-    if wait_for_connection(30000, 100):
+    if wait_for_connection(30000, 1000):
         CONFIG['SSID'] = ssid
         CONFIG['password'] = password
         CONFIG['enabled'] = True
@@ -63,16 +63,21 @@ def connect(ssid=CONFIG.SSID,
 def wait_for_connection(maximum_duration_ms=CONFIG.connection_timeout_ms,
                         wait_ms=CONFIG.connection_delay_ms):
     """Waits for a connection for maximum_duration_ms, polls every wait_ms"""
-    report_string = "WIFI connection detected within %d ms"
-    ticks_start = ticks_ms()
-    elapsed_ms = ticks_diff(ticks_ms(), ticks_start)
-    while ((not maximum_duration_ms or elapsed_ms < maximum_duration_ms)
-           and NIC.active()
-           and not NIC.isconnected()):
-        sleep_ms(wait_ms)
+    if not NIC.isconnected():
+        report_string = "Wifi connection detected within %d ms"
+        ticks_start = ticks_ms()
         elapsed_ms = ticks_diff(ticks_ms(), ticks_start)
-    if NIC.isconnected():
-        print(report_string % ticks_diff(ticks_ms(), ticks_start))
+        while ((not maximum_duration_ms or elapsed_ms < maximum_duration_ms)
+               and NIC.active()
+               and not NIC.isconnected()):
+            print('.', end='', flush=True)
+            sleep_ms(wait_ms)
+            elapsed_ms = ticks_diff(ticks_ms(), ticks_start)
+        print('')
+        if NIC.isconnected():
+            print(report_string % ticks_diff(ticks_ms(), ticks_start))
+        else:
+            print("No %s" % (report_string % elapsed_ms))
     else:
-        print("No %s" % (report_string % elapsed_ms))
+        print('Wifi already connected')
     return NIC.isconnected()
