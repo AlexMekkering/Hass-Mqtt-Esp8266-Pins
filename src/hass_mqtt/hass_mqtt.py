@@ -5,6 +5,7 @@ from . import mqtt
 from . import wifi
 from . import pins as pinz
 from .config import Config
+from .setup_utils import ask_input, ask_confirmation
 
 SET = b'set'
 SWITCH = b'switch'
@@ -18,6 +19,22 @@ _DEFAULT_CONFIG = {
     'command_topic_tail': SET
 }
 CONFIG = Config(_CONFIG_FILENAME, _DEFAULT_CONFIG)
+
+
+def setup():
+    """Interactively sets up Home Assistant's MQTT configuration"""
+    succes = False  # until proven otherwise
+    print('Interactive setup of your Home Assistant MQTT configuration:')
+    temp = {}
+    temp['prefix'] = ask_input(' prefix', None, CONFIG['prefix'])
+    temp['command_topic_tail'] = ask_input(' command_topic_tail', None,
+                                           CONFIG['command_topic_tail'])
+    if ask_confirmation(
+            'Are you sure you want to enable and save these settings?'):
+        CONFIG.current.update(temp)
+        CONFIG.save()
+        succes = True
+    return succes
 
 
 def _partial(func, *args, **kwargs):
@@ -119,8 +136,8 @@ def main():
     subscribing to all command topics for this node.
     """
     if wifi.is_enabled() and wifi.wait_for_connection():
-        client = MQTTClient(pinz.setup())
+        client = MQTTClient(pinz.load())
         client.connect()
-        if client.is_enabled():
+        if mqtt.is_enabled():
             while True:
                 client.wait_msg()

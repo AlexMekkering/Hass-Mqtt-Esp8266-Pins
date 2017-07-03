@@ -4,6 +4,7 @@ from network import WLAN, STA_IF  # pylint: disable=F0401
 from utime import sleep_ms, ticks_ms, ticks_diff  # pylint: disable=F0401
 from machine import reset  # pylint: disable=F0401
 from .config import Config
+from .setup_utils import ask_input
 
 _CONFIG_FILENAME = 'wifi.json'
 _DEFAULT_CONFIG = {
@@ -20,7 +21,7 @@ if not CONFIG.enabled:
     print(ERROR_MSG)
 
 
-def setup(ssid, password):
+def setup_config(ssid, password):
     """Sets up a station Wifi configuration for an SSID and password"""
     was_active = NIC.active()
     NIC.active(True)
@@ -33,6 +34,23 @@ def setup(ssid, password):
         print("Persistent wifi settings updated")
     else:
         NIC.active(was_active)
+    return is_enabled()
+
+
+def setup():
+    """Interactively sets up the wifi configuration"""
+    print('Interactive setup of your wifi connection:')
+    print('  Current status: %s' % 'enabled' if is_enabled() else 'disabled')
+    ssid = ask_input(' SSID', None, CONFIG.SSID if is_enabled() else None)
+    password = ask_input(' password')
+    if ssid != CONFIG.SSID or password != CONFIG.password or not is_enabled():
+        print('Trying out the new configuration...')
+        succes = setup_config(ssid, password)
+        if not succes:
+            print('\n ERROR: Setting up wifi connection failed!')
+    else:
+        succes = True
+    return succes
 
 
 def is_enabled():
